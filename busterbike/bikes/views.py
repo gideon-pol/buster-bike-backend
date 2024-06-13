@@ -30,6 +30,7 @@ class ListBikesView(View):
                 'last_used_by': bike.last_used_by.first_name if bike.last_used_by else None,
                 'last_used_on': bike.last_used_on,
                 'capabilities': bike.capabilities,
+                'notes': bike.notes,
                 'created_at': bike.created_at,
                 'updated_at': bike.updated_at,
             })

@@ -21,6 +21,8 @@ class Bike(models.Model):
 
     capabilities = models.JSONField(default=dict)
 
+    notes = models.CharField(max_length=400, default="Geen notities")
+
     last_used_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     last_used_on = models.DateTimeField(null=True, blank=True)
 

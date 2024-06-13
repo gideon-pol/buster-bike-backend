@@ -12,6 +12,7 @@ from rest_framework import serializers
 class BikeEndValidator(serializers.Serializer):
     id = serializers.UUIDField(required=True)
     capabilities = serializers.DictField(required=True, child=serializers.IntegerField(required=True))
+    notes = serializers.CharField(required=False, max_length=400)
 
 class ReservedBikeView(View):
     def get(self, request):
@@ -32,6 +33,7 @@ class ReservedBikeView(View):
                 'last_used_by': bike.last_used_by.first_name if bike.last_used_by else None,
                 'last_used_on': bike.last_used_on,
                 'capabilities': bike.capabilities,
+                'notes': bike.notes,
                 'created_at': bike.created_at,
                 'updated_at': bike.updated_at,
             }
@@ -57,8 +59,8 @@ class ReservedBikeEndView(View):
         bike.reserved_by = None
         bike.last_used_by = user
         bike.last_used_on = timezone.now()
-        print(serializer.validated_data['capabilities'])
         bike.capabilities = serializer.validated_data['capabilities']
+        bike.notes = serializer.validated_data['notes']
 
         bike.save()
 
