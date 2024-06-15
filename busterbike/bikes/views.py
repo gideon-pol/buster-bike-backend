@@ -5,9 +5,12 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView 
+
 from users.models import UserDetails
 
-from .models import Bike
+from .models import Bike, Ride
 from django.db import transaction
 
 from random import choice
@@ -36,7 +39,8 @@ class ListBikesView(View):
             })
         return JsonResponse(bikes_list, safe=False)
     
-class ReserveBikeView(View):
+class ReserveBikeView(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request, bike_id):
         with transaction.atomic():
             try:
@@ -49,13 +53,23 @@ class ReserveBikeView(View):
             if bike.reserved_by:
                 return JsonResponse({'error': 'Bike is in use'}, status=400)
             
-            user = User.objects.filter(is_superuser=True).first()
-
-            bike.reserved_by = user
-            bike.last_used_by = user
+            bike.reserved_by = request.user
+            bike.last_used_by = request.user
             bike.last_used_on = timezone.now()
+            bike.total_rides += 1
 
             bike.save()
+
+            Ride.objects.create(
+                bike=bike,
+                user=request.user,
+                start_time=timezone.now(),
+                end_time=None,
+                start_latitude=bike.latitude,
+                start_longitude=bike.longitude,
+                end_latitude=None,
+                end_longitude=None,
+            )
 
         return JsonResponse({'success': 'Bike reserved'}, status=200)
     

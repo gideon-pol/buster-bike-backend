@@ -26,6 +26,28 @@ class Bike(models.Model):
     last_used_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     last_used_on = models.DateTimeField(null=True, blank=True)
 
+    total_rides = models.IntegerField(default=0)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+class Ride(models.Model):
+    uuid = models.UUIDField(primary_key=True, editable=False, unique=True, default=uuid.uuid4)
+
+    bike = models.ForeignKey(Bike, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    start_time = models.DateTimeField(auto_now_add=True)
+    end_time = models.DateTimeField(null=True, blank=True)
+
+    start_latitude = models.DecimalField(max_digits=9, decimal_places=6, default=0)
+    start_longitude = models.DecimalField(max_digits=9, decimal_places=6, default=0)
+
+    end_latitude = models.DecimalField(max_digits=9, decimal_places=6, default=0)
+    end_longitude = models.DecimalField(max_digits=9, decimal_places=6, default=0)
+
+    distance = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+    duration = models.DurationField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
