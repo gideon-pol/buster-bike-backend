@@ -26,6 +26,14 @@ SECRET_KEY = 'django-insecure-$ez496$ie38y!&^(ppf=5htad3nwr^y=50%bb2!8p4f79ps*9y
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+CSRF_TRUSTED_ORIGINS = [
+    'https://busterbike.nl', 
+    'https://api.busterbike.nl'
+]
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 
 CORS_ORIGIN_ALLOW_ALL = True
 

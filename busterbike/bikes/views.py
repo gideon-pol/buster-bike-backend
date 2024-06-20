@@ -1,4 +1,5 @@
 from django.utils import timezone
+from datetime import timedelta
 from django.shortcuts import render
 from django.views import View
 from django.http import HttpResponse, JsonResponse
@@ -67,8 +68,10 @@ class ReserveBikeView(APIView):
                 end_time=None,
                 start_latitude=bike.latitude,
                 start_longitude=bike.longitude,
-                end_latitude=None,
-                end_longitude=None,
+                end_latitude=0,
+                end_longitude=0,
+                distance=0,
+                duration=timedelta(seconds=0)
             )
 
         return JsonResponse({'success': 'Bike reserved'}, status=200)

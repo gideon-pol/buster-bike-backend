@@ -47,6 +47,13 @@ class ReservedBikeView(APIView):
         
         return JsonResponse("", safe=False, status=200)
     
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        request.user.auth_token.delete()
+        return JsonResponse({'success': 'User logged out'}, status=200)
+
 class ReservedBikeEndView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -76,6 +83,8 @@ class ReservedBikeEndView(APIView):
         ride.end_longitude = bike.longitude
         ride.distance = 0
         ride.duration = ride.end_time - ride.start_time
+
+        ride.save()
 
         return JsonResponse({'success': 'Bike reserved'}, status=200)
     
@@ -114,8 +123,30 @@ class RegisterView(APIView):
 
         referral_user = UserDetails.objects.filter(referral_code=serializer.validated_data['referral_code']).first()
         user_details = UserDetails(user=user, referrer=referral_user.user)
-        referral_code = ''.join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=6))
+        referral_code = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=6))
+        while UserDetails.objects.filter(referral_code=referral_code).exists():
+            referral_code = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=6))
         user_details.referral_code = referral_code
         user_details.save()
 
         return JsonResponse({'success': 'User created'}, status=200)
+    
+class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_details = UserDetails.objects.filter(user=request.user).first()
+
+        response = {
+            'id': request.user.id,
+            'username': request.user.username,
+            'first_name': request.user.first_name,
+            'last_name': request.user.last_name,
+            'email': request.user.email,
+            'referral_code': user_details.referral_code,
+            'referrer': user_details.referrer.username if user_details.referrer else None,
+            'created_at': request.user.date_joined,
+            'updated_at': request.user.last_login,
+        }
+
+        return JsonResponse(response, safe=False)

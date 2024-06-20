@@ -1,5 +1,4 @@
 django
 djangorestframework
-tzdata
 django-cors-headers
 tzdata
