@@ -1,23 +1,31 @@
 import subprocess
 import time
+import threading
 
 def git_pull():
     """Pulls the latest changes from the Git repository."""
     result = subprocess.run(['git', 'pull'], capture_output=True, text=True)
     return result.stdout
 
+server_process = None
+
 def server_is_running():
     """Checks if the server is running."""
-    result = subprocess.run(['pgrep', '-f', 'python3 manage.py runserver'], capture_output=True, text=True)
-    return result.stdout != ''
+    global server_process
+    return server_process is not None and server_process.poll() is None
 
 def restart_server():
     """Restarts the server."""
+    global server_process
     if server_is_running():
-        subprocess.run(['pkill', '-f', 'python3 manage.py runserver'])
-    subprocess.run(['python3', 'manage.py', 'runserver', '0.0.0.0:8000'])
+        server_process.terminate()  # Terminate the existing server process
+        server_process.wait()  # Wait for the process to terminate
+    # Start the server in a new subprocess
+    server_process = subprocess.Popen(['python3', 'manage.py', 'runserver', '0.0.0.0:8000'])
 
 def main():
+    restart_server()
+
     while True:
         print("Checking for changes...")
         output = git_pull()
