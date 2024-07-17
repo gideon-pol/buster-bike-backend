@@ -34,7 +34,7 @@ def main():
             restart_server()
         else:
             print("No changes detected.")
-        time.sleep(10)  # Wait for 5 minutes
+        time.sleep(60)
 
 if __name__ == "__main__":
     main()
