@@ -6,7 +6,7 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView 
 
 from users.models import UserDetails
@@ -85,3 +85,24 @@ class ImageBikeView(View):
         
         image_data = open(f"bikes/images/{bike_id}.png", "rb").read()
         return HttpResponse(image_data, content_type="image/png", status=200)
+    
+class AddBikeView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        if not request.user.has_perm("bike.add_bike"):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+
+        bike = Bike.objects.create(
+            name=request.data['name'],
+            code=''.join(choice('0123456789') for i in range(6)),
+            latitude=request.data['latitude'],
+            longitude=request.data['longitude'],
+            is_available=True,
+            reserved_by=None,
+            last_used_by=None,
+            last_used_on=None,
+            capabilities=request.data['capabilities'],
+            notes=request.data['notes']
+        )
+        bike.save()
+        return JsonResponse({'success': 'Bike added'}, status=200)

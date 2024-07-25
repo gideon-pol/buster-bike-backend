@@ -147,6 +147,16 @@ class MeView(APIView):
             'referrer': user_details.referrer.username if user_details.referrer else None,
             'created_at': request.user.date_joined,
             'updated_at': request.user.last_login,
+            'permissions': [
+                'bike.add' if request.user.has_perm("bike.add_bike") else None
+            ]
         }
 
         return JsonResponse(response, safe=False)
+    
+class DeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        request.user.delete()
+        return JsonResponse({'success': 'User deleted'}, status=200)
