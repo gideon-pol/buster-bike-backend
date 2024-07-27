@@ -23,6 +23,8 @@ class ListBikesView(View):
         bikes_list = []
 
         for bike in bikes:
+            if not bike.is_available:
+                continue
             bikes_list.append({
                 'id': bike.uuid,
                 'name': bike.name,

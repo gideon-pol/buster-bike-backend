@@ -11,6 +11,7 @@ from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 import random
+from rest_framework.authtoken.models import Token
 
 class BikeEndValidator(serializers.Serializer):
     id = serializers.UUIDField(required=True)
@@ -129,7 +130,13 @@ class RegisterView(APIView):
         user_details.referral_code = referral_code
         user_details.save()
 
-        return JsonResponse({'success': 'User created'}, status=200)
+        token, _ = Token.objects.get_or_create(user=user)
+        response = {
+            'success': 'User created',
+            'token': token.key
+        }
+
+        return JsonResponse(response, status=200)
     
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
