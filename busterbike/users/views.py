@@ -3,8 +3,9 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import View
 from django.contrib.auth.models import User
+from django.db import transaction
 
-from .models import UserDetails
+from .models import UserDetails, Referral
 from bikes.models import Bike, Ride
 
 from rest_framework import serializers
@@ -104,45 +105,54 @@ class RegisterValidator(serializers.Serializer):
         if not value.isalnum():
             raise serializers.ValidationError('Invalid referral code')
         
-        referral_user = UserDetails.objects.filter(referral_code=value).first()
-        if not referral_user:
+        # referral_user = UserDetails.objects.filter(referral_code=value).first()
+        # if not referral_user:
+        #     raise serializers.ValidationError('Invalid referral code')
+
+        referral = Referral.objects.filter(code=value).first()
+        if not referral:
             raise serializers.ValidationError('Invalid referral code')
+        
+        if referral.referred:
+            raise serializers.ValidationError('Referral code already used')
         
         return value
     
 class RegisterView(APIView):
     def post(self, request):
-        print(len(request.json["referral_code"]))
         serializer = RegisterValidator(data=request.json)
         if not serializer.is_valid():
             print(serializer.errors)
             return JsonResponse({'error': serializer.errors}, status=400)
+        print(len(request.json["referral_code"]))
         
-        user = User.objects.create_user(username=serializer.validated_data['username'], password=serializer.validated_data['password'])
-        user.first_name = serializer.validated_data['username']
-        user.save()
+        with transaction.atomic():
+            user = User.objects.create_user(username=serializer.validated_data['username'], password=serializer.validated_data['password'])
+            user.first_name = serializer.validated_data['username']
+            user.save()
 
-        referral_user = UserDetails.objects.filter(referral_code=serializer.validated_data['referral_code']).first()
-        user_details = UserDetails(user=user, referrer=referral_user.user)
-        referral_code = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=6))
-        while UserDetails.objects.filter(referral_code=referral_code).exists():
-            referral_code = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=6))
-        user_details.referral_code = referral_code
-        user_details.save()
+            user_details = UserDetails(user=user)
+            user_details.save()
 
-        token, _ = Token.objects.get_or_create(user=user)
-        response = {
-            'success': 'User created',
-            'token': token.key
-        }
+            referral = Referral.objects.filter(code=serializer.validated_data['referral_code']).first()
+            referral.referred = user
+            referral.save()
+            
+            token, _ = Token.objects.get_or_create(user=user)
+            response = {
+                'success': 'User created',
+                'token': token.key
+            }
 
-        return JsonResponse(response, status=200)
+            return JsonResponse(response, status=200)
     
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user_details = UserDetails.objects.filter(user=request.user).first()
+        # user_details = UserDetails.objects.filter(user=request.user).first()
+
+        referral = Referral.objects.filter(referred=request.user).first()
 
         response = {
             'id': request.user.id,
@@ -150,8 +160,9 @@ class MeView(APIView):
             'first_name': request.user.first_name,
             'last_name': request.user.last_name,
             'email': request.user.email,
-            'referral_code': user_details.referral_code,
-            'referrer': user_details.referrer.username if user_details.referrer else None,
+            # 'referral_code': user_details.referral_code,
+            'referrer': referral.referrer.username if referral else None,
+            'can_refer': request.user.has_perm("users.add_referral"),
             'created_at': request.user.date_joined,
             'updated_at': request.user.last_login,
             'permissions': [
@@ -167,3 +178,34 @@ class DeleteView(APIView):
     def post(self, request):
         request.user.delete()
         return JsonResponse({'success': 'User deleted'}, status=200)
+    
+class ReferralCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if not request.user.has_perm("users.add_referral"):
+            return JsonResponse({'error': 'User does not have permission to create referral'}, status=403)
+        
+        referral_code = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=6))
+        while Referral.objects.filter(code=referral_code).exists():
+            referral_code = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=6))
+        
+        referral = Referral(code=referral_code, referrer=request.user)
+        referral.save()
+
+        return JsonResponse({'referral_code': referral_code}, status=201)
+    
+class ReferralListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        referrals = Referral.objects.filter(referrer=request.user)
+        response = []
+        for referral in referrals:
+            response.append({
+                'code': referral.code,
+                'referred': referral.referred.username if referral.referred else None,
+                'created_at': referral.created_at,
+            })
+        
+        return JsonResponse(response, safe=False)
