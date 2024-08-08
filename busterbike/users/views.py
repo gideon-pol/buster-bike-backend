@@ -13,7 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 import random
 from rest_framework.authtoken.models import Token
-from geopy.distance import geodesic
+from geopy import distance
 
 class BikeEndValidator(serializers.Serializer):
     id = serializers.UUIDField(required=True)
@@ -83,7 +83,7 @@ class ReservedBikeEndView(APIView):
         start_point = (ride.start_latitude, ride.start_longitude)
         end_point = (ride.end_latitude, ride.end_longitude)
 
-        distance = geodesic(start_point, end_point).kilometers
+        distance = distance.distance(start_point, end_point).km
 
         if distance < 0.1:  # Adjust the threshold as needed
             ride.delete()
