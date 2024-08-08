@@ -9,13 +9,10 @@ from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView 
 
-from users.models import UserDetails
-
 from .models import Bike, Ride
-from django.db import transaction
+from django.db import transaction, models
 
 from random import choice
-import os
 
 class ListBikesView(View):
     def get(self, request):
@@ -36,6 +33,7 @@ class ListBikesView(View):
                 'last_used_by': bike.last_used_by.first_name if bike.last_used_by else None,
                 'last_used_on': bike.last_used_on,
                 'capabilities': bike.capabilities,
+                'total_distance': Ride.objects.filter(bike=bike).aggregate(models.Sum('distance'))['distance__sum'],
                 'notes': bike.notes,
                 'created_at': bike.created_at,
                 'updated_at': bike.updated_at,

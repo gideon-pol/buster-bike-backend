@@ -13,6 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 import random
 from rest_framework.authtoken.models import Token
+from geopy.distance import geodesic
 
 class BikeEndValidator(serializers.Serializer):
     id = serializers.UUIDField(required=True)
@@ -20,13 +21,12 @@ class BikeEndValidator(serializers.Serializer):
     latitude = serializers.DecimalField(required=True, max_digits=9, decimal_places=6)
     longitude = serializers.DecimalField(required=True, max_digits=9, decimal_places=6)
     notes = serializers.CharField(required=False, max_length=400)
+    total_distance = serializers.DecimalField(required=True, max_digits=9, decimal_places=2)
 
 class ReservedBikeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user_details = UserDetails.objects.filter(user=request.user).first()
-
         bike = Bike.objects.filter(reserved_by=request.user).first()
 
         if(bike):
@@ -80,10 +80,18 @@ class ReservedBikeEndView(APIView):
 
         bike.save()
 
+        start_point = (ride.start_latitude, ride.start_longitude)
+        end_point = (ride.end_latitude, ride.end_longitude)
+
+        distance = geodesic(start_point, end_point).kilometers
+
+        if distance < 0.1:  # Adjust the threshold as needed
+            ride.delete()
+
         ride.end_time = timezone.now()
         ride.end_latitude = bike.latitude
         ride.end_longitude = bike.longitude
-        ride.distance = 0
+        ride.distance = serializer.validated_data['total_distance']
         ride.duration = ride.end_time - ride.start_time
 
         ride.save()
@@ -124,7 +132,6 @@ class RegisterView(APIView):
         if not serializer.is_valid():
             print(serializer.errors)
             return JsonResponse({'error': serializer.errors}, status=400)
-        print(len(request.json["referral_code"]))
         
         with transaction.atomic():
             user = User.objects.create_user(username=serializer.validated_data['username'], password=serializer.validated_data['password'])
