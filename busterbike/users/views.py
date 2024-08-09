@@ -60,20 +60,15 @@ class ReservedBikeEndView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        print(request.json)
         serializer = BikeEndValidator(data=request.json)
         if not serializer.is_valid():
-            print(serializer.errors)
             return JsonResponse({'error': 'Invalid request'}, status=400)
         
-        print(serializer.validated_data)
         try:
             bike = Bike.objects.select_for_update().get(uuid=serializer.validated_data['id'])
             ride = Ride.objects.get(bike=bike, user=request.user, end_time=None)
         except Exception as e:
-            print(e)
             return JsonResponse({'error': 'No bike reserved'}, status=404)
-        print("1")
 
         bike.reserved_by = None
         bike.last_used_by = request.user
@@ -85,12 +80,11 @@ class ReservedBikeEndView(APIView):
 
         bike.save()
 
-        print(2)
-
         start_point = (ride.start_latitude, ride.start_longitude)
         end_point = (ride.end_latitude, ride.end_longitude)
 
         dst = distance.distance(start_point, end_point).km
+        print(start_point, end_point)
         print(dst)
 
         if dst < 0.1 and serializer.validated_data['driven_distance'] < 0.1:
