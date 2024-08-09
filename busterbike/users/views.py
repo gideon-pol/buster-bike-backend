@@ -84,8 +84,6 @@ class ReservedBikeEndView(APIView):
         end_point = (serializer.validated_data['latitude'], serializer.validated_data['longitude'])
 
         dst = distance.distance(start_point, end_point).km
-        print(start_point, end_point)
-        print(dst)
 
         if dst < 0.1 and serializer.validated_data['driven_distance'] < 0.1:
             ride.delete()
