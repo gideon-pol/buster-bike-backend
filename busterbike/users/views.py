@@ -73,7 +73,8 @@ class ReservedBikeEndView(APIView):
         except Exception as e:
             print(e)
             return JsonResponse({'error': 'No bike reserved'}, status=404)
-        
+        print("1")
+
         bike.reserved_by = None
         bike.last_used_by = request.user
         bike.last_used_on = timezone.now()
@@ -83,6 +84,8 @@ class ReservedBikeEndView(APIView):
         bike.notes = serializer.validated_data['notes']
 
         bike.save()
+
+        print(2)
 
         start_point = (ride.start_latitude, ride.start_longitude)
         end_point = (ride.end_latitude, ride.end_longitude)
