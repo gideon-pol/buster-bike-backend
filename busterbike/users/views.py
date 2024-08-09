@@ -65,12 +65,13 @@ class ReservedBikeEndView(APIView):
         if not serializer.is_valid():
             print(serializer.errors)
             return JsonResponse({'error': 'Invalid request'}, status=400)
-
+        
+        print(serializer.validated_data)
         try:
             bike = Bike.objects.select_for_update().get(uuid=serializer.validated_data['id'])
             ride = Ride.objects.get(bike=bike, user=request.user, end_time=None)
-        except Bike.DoesNotExist:
-            print('Bike not found')
+        except Exception as e:
+            print(e)
             return JsonResponse({'error': 'No bike reserved'}, status=404)
         
         bike.reserved_by = None
