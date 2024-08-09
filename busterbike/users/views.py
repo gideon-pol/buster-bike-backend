@@ -90,10 +90,10 @@ class ReservedBikeEndView(APIView):
         start_point = (ride.start_latitude, ride.start_longitude)
         end_point = (ride.end_latitude, ride.end_longitude)
 
-        distance = distance.distance(start_point, end_point).km
-        print(distance)
+        dst = distance.distance(start_point, end_point).km
+        print(dst)
 
-        if distance < 0.1 and serializer.validated_data['driven_distance'] < 0.1:
+        if dst < 0.1 and serializer.validated_data['driven_distance'] < 0.1:
             ride.delete()
         else:
             ride.end_time = timezone.now()
