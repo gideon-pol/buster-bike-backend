@@ -70,6 +70,7 @@ class ReservedBikeEndView(APIView):
             bike = Bike.objects.select_for_update().get(uuid=serializer.validated_data['id'])
             ride = Ride.objects.get(bike=bike, user=request.user, end_time=None)
         except Bike.DoesNotExist:
+            print('Bike not found')
             return JsonResponse({'error': 'No bike reserved'}, status=404)
         
         bike.reserved_by = None
@@ -86,17 +87,18 @@ class ReservedBikeEndView(APIView):
         end_point = (ride.end_latitude, ride.end_longitude)
 
         distance = distance.distance(start_point, end_point).km
+        print(distance)
 
-        if distance < 0.1 and serializer.validated_data['driven_distance'] < 0.1 :
+        if distance < 0.1 and serializer.validated_data['driven_distance'] < 0.1:
             ride.delete()
+        else:
+            ride.end_time = timezone.now()
+            ride.end_latitude = bike.latitude
+            ride.end_longitude = bike.longitude
+            ride.distance = serializer.validated_data['driven_distance']
+            ride.duration = ride.end_time - ride.start_time
 
-        ride.end_time = timezone.now()
-        ride.end_latitude = bike.latitude
-        ride.end_longitude = bike.longitude
-        ride.distance = serializer.validated_data['driven_distance']
-        ride.duration = ride.end_time - ride.start_time
-
-        ride.save()
+            ride.save()
 
         return JsonResponse({'success': 'Bike reserved'}, status=200)
     
