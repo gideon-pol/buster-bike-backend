@@ -81,7 +81,7 @@ class ReservedBikeEndView(APIView):
         bike.save()
 
         start_point = (ride.start_latitude, ride.start_longitude)
-        end_point = (ride.end_latitude, ride.end_longitude)
+        end_point = (serializer.validated_data['latitude'], serializer.validated_data['longitude'])
 
         dst = distance.distance(start_point, end_point).km
         print(start_point, end_point)
