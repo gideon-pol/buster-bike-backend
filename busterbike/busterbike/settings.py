@@ -180,7 +180,7 @@ LOGGING = {
         # Custom handler which we will use with logger 'django'.
         # We want errors/warnings to be logged when DEBUG=False
         'console_on_not_debug': {
-            'level': 'WARNING',
+            'level': 'INFO',
             'filters': ['require_debug_false'],
             'class': 'logging.StreamHandler',
         },
