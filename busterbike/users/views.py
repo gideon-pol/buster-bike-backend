@@ -21,7 +21,7 @@ class BikeEndValidator(serializers.Serializer):
     latitude = serializers.DecimalField(required=True, max_digits=9, decimal_places=6)
     longitude = serializers.DecimalField(required=True, max_digits=9, decimal_places=6)
     notes = serializers.CharField(required=False, max_length=400)
-    total_distance = serializers.DecimalField(required=True, max_digits=9, decimal_places=2)
+    driven_distance = serializers.DecimalField(required=True, max_digits=9, decimal_places=2)
 
 class ReservedBikeView(APIView):
     permission_classes = [IsAuthenticated]
@@ -87,13 +87,13 @@ class ReservedBikeEndView(APIView):
 
         distance = distance.distance(start_point, end_point).km
 
-        if distance < 0.1:  # Adjust the threshold as needed
+        if distance < 0.1 and serializer.validated_data['driven_distance'] < 0.1 :
             ride.delete()
 
         ride.end_time = timezone.now()
         ride.end_latitude = bike.latitude
         ride.end_longitude = bike.longitude
-        ride.distance = serializer.validated_data['total_distance']
+        ride.distance = serializer.validated_data['driven_distance']
         ride.duration = ride.end_time - ride.start_time
 
         ride.save()
