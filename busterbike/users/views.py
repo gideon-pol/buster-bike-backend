@@ -60,6 +60,8 @@ class ReservedBikeEndView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        print("helloooooo")
+        print(request.json)
         serializer = BikeEndValidator(data=request.json)
         if not serializer.is_valid():
             return JsonResponse({'error': 'Invalid request'}, status=400)
