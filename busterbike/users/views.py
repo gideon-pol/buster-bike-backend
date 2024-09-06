@@ -170,6 +170,7 @@ class MeView(APIView):
             # 'referral_code': user_details.referral_code,
             'referrer': referral.referrer.username if referral else None,
             'can_refer': request.user.has_perm("users.add_referral"),
+            'can_take_out_of_range': request.user.is_superuser,
             'created_at': request.user.date_joined,
             'updated_at': request.user.last_login,
             'permissions': [
